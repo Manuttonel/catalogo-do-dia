@@ -18,5 +18,11 @@ void main() {
     await tester.pump();
 
     expect(find.text('11 opções no catálogo'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Remover').first);
+    await tester.pump();
+
+    expect(find.text('Pão de queijo'), findsNothing);
+    expect(find.text('10 opções no catálogo'), findsOneWidget);
   });
 }

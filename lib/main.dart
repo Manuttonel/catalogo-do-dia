@@ -85,6 +85,20 @@ class _TelaCatalogoState extends State<TelaCatalogo> {
     campoPreco.clear();
   }
 
+  // Remove a comida escolhida (e o preço dela) do catálogo
+  void removerComida(int indice) {
+    final String nome = comidas[indice];
+
+    setState(() {
+      comidas.removeAt(indice);
+      precos.removeAt(indice);
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('$nome removido do catálogo')),
+    );
+  }
+
   // PASSO 4 • FORMATAÇÃO DO VALOR
   String formatarPreco(double valor) {
     return 'R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}';
@@ -148,13 +162,26 @@ class _TelaCatalogoState extends State<TelaCatalogo> {
               child: const Icon(Icons.restaurant),
             ),
             title: Text(comidas[indice]),
-            trailing: Text(
-              formatarPreco(precos[indice]),
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.red.shade700,
-              ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  formatarPreco(precos[indice]),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green.shade700,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () {
+                    removerComida(indice);
+                  },
+                  icon: const Icon(Icons.delete_outline),
+                  color: Colors.red.shade700,
+                  tooltip: 'Remover',
+                ),
+              ],
             ),
           ),
         );
