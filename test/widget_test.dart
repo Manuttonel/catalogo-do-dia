@@ -11,21 +11,21 @@ void main() {
     await tester.pumpWidget(const CantinaApp());
 
     expect(find.text('Administração Cantina'), findsOneWidget);
-    expect(find.text('10 produtos cadastrados'), findsOneWidget);
+    expect(find.text('10 itens'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField).at(0), 'Tapioca');
     await tester.enterText(find.byType(TextField).at(1), '7,50');
     await tester.tap(find.text('Cadastrar produto'));
     await tester.pump();
 
-    expect(find.text('11 produtos cadastrados'), findsOneWidget);
+    expect(find.text('11 itens'), findsOneWidget);
     expect(find.text('R\$ 7,50'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Excluir produto').first);
     await tester.pump();
 
     expect(find.text('Pão de queijo'), findsNothing);
-    expect(find.text('10 produtos cadastrados'), findsOneWidget);
+    expect(find.text('10 itens'), findsOneWidget);
   });
 
   testWidgets('Registra uma venda e avança as etapas', (tester) async {
@@ -33,7 +33,7 @@ void main() {
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(const CantinaApp());
-    await tester.tap(find.text('Vendas'));
+    await tester.tap(find.text('Gestão de vendas'));
     await tester.pumpAndSettle();
 
     expect(find.text('0 vendas registradas'), findsOneWidget);
@@ -44,15 +44,15 @@ void main() {
     await tester.pump();
 
     expect(find.text('1 vendas registradas'), findsOneWidget);
-    expect(find.text('2x Pão de queijo • Pix'), findsOneWidget);
+    expect(find.text('2x Pão de queijo'), findsOneWidget);
     expect(find.text('Aguardando pagamento'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Confirmar pagamento'));
+    await tester.tap(find.text('Confirmar pagamento'));
     await tester.pump();
     expect(find.text('Pago'), findsOneWidget);
     expect(find.text('R\$ 0,00'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Marcar entregue'));
+    await tester.tap(find.text('Marcar entregue'));
     await tester.pump();
     expect(find.text('Entregue'), findsOneWidget);
   });
