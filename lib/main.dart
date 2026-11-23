@@ -1,137 +1,229 @@
-
 import 'package:flutter/material.dart';
 
-
-// 1. CONSTANTES E CONFIGURAÇÕES
-
-
-const String nomeAplicativo = 'Administração Cantina';
-
-const Color corPrincipal = Color(0xFFC62828);
-const Color corFundo = Color(0xFFF5F6F8);
-
-// 2. MODELOS
-
-// Modelo de produto
-class Produto {
-  final String nome;
-  final double preco;
-
-  const Produto({
-    required this.nome,
-    required this.preco,
-  });
-}
-
-// Estados possíveis de uma venda
-enum StatusVenda {
-  aguardandoPagamento,
-  pago,
-  entregue,
-}
-
-// Modelo de venda
-class Venda {
-  final Produto produto;
-  final int quantidade;
-  final String pagamento;
-  final String horario;
-  StatusVenda status;
-
-  Venda({
-    required this.produto,
-    required this.quantidade,
-    required this.pagamento,
-    required this.horario,
-    this.status = StatusVenda.aguardandoPagamento,
-  });
-
-  double get total => produto.preco * quantidade;
-}
-
-// 3. INICIALIZAÇÃO DO APLICATIVO
+// Cores usadas no app inteiro
+const Color vermelho = Color(0xFFC62828);
+const Color fundo = Color(0xFFF5F6F8);
 
 void main() {
-  runApp(const CatalogoApp());
+  runApp(const CantinaApp());
 }
 
-class CatalogoApp extends StatelessWidget {
-  const CatalogoApp({super.key});
+class CantinaApp extends StatelessWidget {
+  const CantinaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: nomeAplicativo,
+      title: 'Administração Cantina',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: corPrincipal,
-          primary: corPrincipal,
+          seedColor: vermelho,
+          primary: vermelho,
           secondary: Colors.amber,
         ),
-        scaffoldBackgroundColor: corFundo,
-        useMaterial3: true,
+        scaffoldBackgroundColor: fundo,
       ),
-      home: const TelaCatalogo(),
+      home: const TelaPrincipal(),
     );
   }
 }
 
-// 4. TELA PRINCIPAL
+// ---------------------------------------------------------------------------
+// MODELOS
+// ---------------------------------------------------------------------------
 
-class TelaCatalogo extends StatefulWidget {
-  const TelaCatalogo({super.key});
+class Produto {
+  const Produto(this.nome, this.preco);
 
-  @override
-  State<TelaCatalogo> createState() => _TelaCatalogoState();
+  final String nome;
+  final double preco;
 }
 
-class _TelaCatalogoState extends State<TelaCatalogo> {
+// Etapas pelas quais toda venda passa, na ordem
+enum StatusVenda {
+  aguardandoPagamento('Aguardando pagamento', Color(0xFFEF6C00)),
+  pago('Pago', Color(0xFF388E3C)),
+  entregue('Entregue', Colors.blueGrey);
 
-  
-  // 4.1 DADOS DOS PRODUTOS
+  const StatusVenda(this.texto, this.cor);
 
+  final String texto;
+  final Color cor;
+}
+
+class Venda {
+  Venda({
+    required this.produto,
+    required this.quantidade,
+    required this.pagamento,
+    required this.horario,
+  });
+
+  final Produto produto;
+  final int quantidade;
+  final String pagamento;
+  final String horario;
+  StatusVenda status = StatusVenda.aguardandoPagamento;
+
+  double get total => produto.preco * quantidade;
+  bool get foiPaga => status != StatusVenda.aguardandoPagamento;
+}
+
+// ---------------------------------------------------------------------------
+// FUNÇÕES DE APOIO
+// ---------------------------------------------------------------------------
+
+// 5.5 -> "R$ 5,50"
+String emReais(double valor) {
+  return 'R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}';
+}
+
+// Hora atual no formato 09:05
+String horaAtual() {
+  final agora = DateTime.now();
+  final hora = agora.hour.toString().padLeft(2, '0');
+  final minuto = agora.minute.toString().padLeft(2, '0');
+  return '$hora:$minuto';
+}
+
+void mostrarAviso(BuildContext context, String mensagem) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(mensagem), behavior: SnackBarBehavior.floating),
+  );
+}
+
+// ---------------------------------------------------------------------------
+// TELA PRINCIPAL
+// Guarda os produtos e as vendas e repassa para as duas abas.
+// ---------------------------------------------------------------------------
+
+class TelaPrincipal extends StatefulWidget {
+  const TelaPrincipal({super.key});
+
+  @override
+  State<TelaPrincipal> createState() => _TelaPrincipalState();
+}
+
+class _TelaPrincipalState extends State<TelaPrincipal> {
+  // Os dados ficam só na memória (não há banco de dados).
+  // Ao recarregar a página, tudo volta a este estado inicial.
   final List<Produto> produtos = [
-    Produto(nome: 'Pão de queijo', preco: 5.00),
-    Produto(nome: 'Coxinha', preco: 6.50),
-    Produto(nome: 'Pastel de carne', preco: 7.00),
-    Produto(nome: 'Esfiha de frango', preco: 6.00),
-    Produto(nome: 'Misto quente', preco: 8.00),
-    Produto(nome: 'Enroladinho de salsicha', preco: 5.50),
-    Produto(nome: 'Bolo de cenoura', preco: 4.50),
-    Produto(nome: 'Suco natural', preco: 6.00),
-    Produto(nome: 'Achocolatado', preco: 4.00),
-    Produto(nome: 'Refrigerante lata', preco: 5.00),
+    const Produto('Pão de queijo', 5.00),
+    const Produto('Coxinha', 6.50),
+    const Produto('Pastel de carne', 7.00),
+    const Produto('Esfiha de frango', 6.00),
+    const Produto('Misto quente', 8.00),
+    const Produto('Enroladinho de salsicha', 5.50),
+    const Produto('Bolo de cenoura', 4.50),
+    const Produto('Suco natural', 6.00),
+    const Produto('Achocolatado', 4.00),
+    const Produto('Refrigerante lata', 5.00),
   ];
-
-  // 4.2 DADOS DAS VENDAS
-  
 
   final List<Venda> vendas = [];
 
-  // ----------------------------------------------------------
-  // 4.3 FORMULÁRIOS E CONTROLES
-  // ----------------------------------------------------------
+  void adicionarProduto(Produto produto) {
+    setState(() => produtos.add(produto));
+    mostrarAviso(context, '${produto.nome} cadastrado!');
+  }
 
-  final TextEditingController campoNome = TextEditingController();
-  final TextEditingController campoPreco = TextEditingController();
+  void removerProduto(Produto produto) {
+    setState(() => produtos.remove(produto));
+    mostrarAviso(context, '${produto.nome} removido do catálogo.');
+  }
 
-  final List<String> formasPagamento = [
-    'Pix',
-    'Dinheiro',
-    'Cartão',
-  ];
+  void registrarVenda(Venda venda) {
+    setState(() => vendas.insert(0, venda));
+    mostrarAviso(
+      context,
+      'Venda registrada: ${venda.quantidade}x ${venda.produto.nome}',
+    );
+  }
 
-  int produtoSelecionado = 0;
-  int quantidade = 1;
+  // Aguardando pagamento -> Pago -> Entregue
+  void avancarStatus(Venda venda) {
+    setState(() {
+      venda.status = switch (venda.status) {
+        StatusVenda.aguardandoPagamento => StatusVenda.pago,
+        StatusVenda.pago => StatusVenda.entregue,
+        StatusVenda.entregue => StatusVenda.entregue,
+      };
+    });
+  }
 
-  String formaPagamento = 'Pix';
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: vermelho,
+          foregroundColor: Colors.white,
+          title: const Row(
+            children: [
+              Icon(Icons.storefront),
+              SizedBox(width: 10),
+              Text(
+                'Administração Cantina',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          bottom: const TabBar(
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            indicatorColor: Colors.amber,
+            indicatorWeight: 3,
+            tabs: [
+              Tab(icon: Icon(Icons.inventory_2_outlined), text: 'Produtos'),
+              Tab(icon: Icon(Icons.point_of_sale), text: 'Gestão de vendas'),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          children: [
+            AbaProdutos(
+              produtos: produtos,
+              aoAdicionar: adicionarProduto,
+              aoRemover: removerProduto,
+            ),
+            AbaVendas(
+              produtos: produtos,
+              vendas: vendas,
+              aoRegistrar: registrarVenda,
+              aoAvancarStatus: avancarStatus,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-  int? produtoEmHover;
+// ---------------------------------------------------------------------------
+// ABA 1: PRODUTOS
+// ---------------------------------------------------------------------------
 
-  // ----------------------------------------------------------
-  // 4.4 CICLO DE VIDA
-  // ----------------------------------------------------------
+class AbaProdutos extends StatefulWidget {
+  const AbaProdutos({
+    super.key,
+    required this.produtos,
+    required this.aoAdicionar,
+    required this.aoRemover,
+  });
+
+  final List<Produto> produtos;
+  final void Function(Produto) aoAdicionar;
+  final void Function(Produto) aoRemover;
+
+  @override
+  State<AbaProdutos> createState() => _AbaProdutosState();
+}
+
+class _AbaProdutosState extends State<AbaProdutos> {
+  final campoNome = TextEditingController();
+  final campoPreco = TextEditingController();
 
   @override
   void dispose() {
@@ -140,239 +232,94 @@ class _TelaCatalogoState extends State<TelaCatalogo> {
     super.dispose();
   }
 
-  // ==========================================================
-  // 5. FUNÇÕES AUXILIARES
-  // ==========================================================
+  void cadastrar() {
+    final nome = campoNome.text.trim();
+    final preco = double.tryParse(campoPreco.text.replaceAll(',', '.').trim());
 
-  // Exibe mensagens na parte inferior da tela
-  void mostrarAviso(String mensagem) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(mensagem),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
-
-  // Formata valores 
-  String formatarPreco(double valor) {
-    return 'R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}';
-  }
-
-  // Retorna a descrição do status
-  String descricaoStatus(StatusVenda status) {
-    switch (status) {
-      case StatusVenda.aguardandoPagamento:
-        return 'Aguardando pagamento';
-      case StatusVenda.pago:
-        return 'Pago';
-      case StatusVenda.entregue:
-        return 'Entregue';
-    }
-  }
-
-  // Define a cor de cada status
-  Color corDoStatus(StatusVenda status) {
-    switch (status) {
-      case StatusVenda.aguardandoPagamento:
-        return Colors.orange.shade800;
-      case StatusVenda.pago:
-        return Colors.green.shade700;
-      case StatusVenda.entregue:
-        return Colors.blueGrey;
-    }
-  }
-
-  // ==========================================================
-  // 6. GERENCIAMENTO DE PRODUTOS
-  // ==========================================================
-
-  // Cadastra um novo produto
-  void adicionarProduto() {
-    final String nome = campoNome.text.trim();
-
-    final String textoPreco = campoPreco.text
-        .replaceAll('R\$', '')
-        .replaceAll(',', '.')
-        .trim();
-
-    final double? preco = double.tryParse(textoPreco);
-
-    if (nome.isEmpty || preco == null || !preco.isFinite || preco <= 0) {
-      mostrarAviso('Informe um nome e um preço válido.');
+    if (nome.isEmpty || preco == null || preco <= 0) {
+      mostrarAviso(context, 'Informe um nome e um preço válido.');
       return;
     }
 
-    setState(() {
-      produtos.add(
-        Produto(
-          nome: nome,
-          preco: preco,
-        ),
-      );
-    });
-
+    widget.aoAdicionar(Produto(nome, preco));
     campoNome.clear();
     campoPreco.clear();
-
-    mostrarAviso('Produto cadastrado com sucesso!');
   }
 
-  // Remove um produto do catálogo
-  void removerProduto(int indice) {
-    if (indice < 0 || indice >= produtos.length) return;
+  @override
+  Widget build(BuildContext context) {
+    final produtos = widget.produtos;
+    final quantidadeTexto = produtos.length == 1
+        ? '1 item'
+        : '${produtos.length} itens';
 
-    final String nome = produtos[indice].nome;
-
-    setState(() {
-      produtos.removeAt(indice);
-
-      if (produtos.isEmpty || produtoSelecionado >= produtos.length) {
-        produtoSelecionado = 0;
-      }
-
-      produtoEmHover = null;
-    });
-
-    mostrarAviso('$nome removido do catálogo.');
-  }
-
-  
-  // 7. GERENCIAMENTO DE VENDAS
-  
-
-  // Registra uma nova venda
-  void registrarVenda() {
-    if (produtos.isEmpty) {
-      mostrarAviso('Cadastre um produto antes de registrar uma venda.');
-      return;
-    }
-
-    final DateTime agora = DateTime.now();
-
-    final String horario =
-        '${agora.hour.toString().padLeft(2, '0')}:'
-        '${agora.minute.toString().padLeft(2, '0')}';
-
-    final Venda novaVenda = Venda(
-      produto: produtos[produtoSelecionado],
-      quantidade: quantidade,
-      pagamento: formaPagamento,
-      horario: horario,
-    );
-
-    setState(() {
-      vendas.insert(0, novaVenda);
-      quantidade = 1;
-    });
-
-    mostrarAviso(
-      'Venda registrada: ${novaVenda.quantidade}x ${novaVenda.produto.nome}',
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Titulo(
+            'Gerenciamento de produtos',
+            subtitulo: 'Cadastre e remova os produtos da cantina.',
+          ),
+          const SizedBox(height: 16),
+          formulario(),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Produtos cadastrados',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                ),
+              ),
+              Etiqueta(quantidadeTexto, cor: vermelho),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: produtos.isEmpty
+                ? const Center(child: Text('Nenhum produto cadastrado.'))
+                : ListView(
+                    children: [
+                      for (final produto in produtos)
+                        CartaoProduto(
+                          produto: produto,
+                          aoRemover: () => widget.aoRemover(produto),
+                        ),
+                    ],
+                  ),
+          ),
+        ],
+      ),
     );
   }
 
-  // Avança o status da venda
-  void avancarStatus(Venda venda) {
-    setState(() {
-      switch (venda.status) {
-        case StatusVenda.aguardandoPagamento:
-          venda.status = StatusVenda.pago;
-          break;
-
-        case StatusVenda.pago:
-          venda.status = StatusVenda.entregue;
-          break;
-
-        case StatusVenda.entregue:
-          break;
-      }
-    });
-  }
-
-  // 8. CÁLCULOS FINANCEIROS
-
-  // Soma todas as vendas
-  double get totalVendido {
-    return vendas.fold(0, (soma, venda) => soma + venda.total);
-  }
-
-  // Soma somente as vendas pagas ou entregues
-  double get totalRecebido {
-    return vendas
-        .where((venda) => venda.status != StatusVenda.aguardandoPagamento)
-        .fold(0, (soma, venda) => soma + venda.total);
-  }
-
-  // Calcula o valor pendente de pagamento
-  double get totalAReceber {
-    return totalVendido - totalRecebido;
-  }
-
-  // 9. COMPONENTES VISUAIS - PRODUTOS
-
-  // Formulário de cadastro de produtos
-  Widget construirFormularioProduto() {
+  Widget formulario() {
     return Card(
       color: Colors.white,
-      elevation: 1,
       margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
       child: Padding(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.add_box_outlined,
-                  color: corPrincipal,
-                  size: 20,
-                ),
-                const SizedBox(width: 7),
-                const Text(
-                  'Adicionar produto',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 8),
-
             Row(
               children: [
                 Expanded(
                   flex: 3,
                   child: TextField(
                     controller: campoNome,
-                    textCapitalization: TextCapitalization.sentences,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Nome do produto',
                       hintText: 'Ex.: Pão de queijo',
-                      prefixIcon: const Icon(
-                        Icons.fastfood_outlined,
-                        size: 18,
-                      ),
+                      prefixIcon: Icon(Icons.fastfood_outlined),
+                      border: OutlineInputBorder(),
                       isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 11,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(9),
-                      ),
                     ),
                   ),
                 ),
-
                 const SizedBox(width: 8),
-
                 Expanded(
                   flex: 2,
                   child: TextField(
@@ -380,41 +327,25 @@ class _TelaCatalogoState extends State<TelaCatalogo> {
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Preço',
                       hintText: '5,00',
                       prefixText: 'R\$ ',
+                      border: OutlineInputBorder(),
                       isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 11,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(9),
-                      ),
                     ),
                   ),
                 ),
               ],
             ),
-
-            const SizedBox(height: 8),
-
-            SizedBox(
-              height: 38,
-              child: ElevatedButton.icon(
-                onPressed: adicionarProduto,
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('Cadastrar produto'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: corPrincipal,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 7),
-                  visualDensity: VisualDensity.compact,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(9),
-                  ),
-                ),
+            const SizedBox(height: 10),
+            ElevatedButton.icon(
+              onPressed: cadastrar,
+              icon: const Icon(Icons.add),
+              label: const Text('Cadastrar produto'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: vermelho,
+                foregroundColor: Colors.white,
               ),
             ),
           ],
@@ -422,271 +353,294 @@ class _TelaCatalogoState extends State<TelaCatalogo> {
       ),
     );
   }
+}
 
-  // Card individual de produto
-  Widget construirCardProduto(int indice) {
-    final Produto produto = produtos[indice];
-    final bool mouseSobreItem = produtoEmHover == indice;
+// ---------------------------------------------------------------------------
+// ABA 2: GESTÃO DE VENDAS
+// ---------------------------------------------------------------------------
 
-    return MouseRegion(
-      onEnter: (_) {
-        setState(() {
-          produtoEmHover = indice;
-        });
-      },
-      onExit: (_) {
-        setState(() {
-          if (produtoEmHover == indice) {
-            produtoEmHover = null;
-          }
-        });
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-        transformAlignment: Alignment.center,
-        transform: Matrix4.diagonal3Values(
-          mouseSobreItem ? 1.008 : 1.0,
-          mouseSobreItem ? 1.008 : 1.0,
-          1.0,
-        ),
-        decoration: BoxDecoration(
-          color: mouseSobreItem
-              ? const Color(0xFFFFFCF4)
-              : Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: mouseSobreItem
-                ? Colors.amber.shade300
-                : Colors.grey.shade200,
-          ),
-          boxShadow: mouseSobreItem
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.07),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                ]
-              : [],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 10,
-            vertical: 5,
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: Colors.amber.shade100,
-                  borderRadius: BorderRadius.circular(9),
-                ),
-                child: Icon(
-                  Icons.fastfood_outlined,
-                  color: corPrincipal,
-                  size: 19,
-                ),
-              ),
+class AbaVendas extends StatefulWidget {
+  const AbaVendas({
+    super.key,
+    required this.produtos,
+    required this.vendas,
+    required this.aoRegistrar,
+    required this.aoAvancarStatus,
+  });
 
-              const SizedBox(width: 10),
+  final List<Produto> produtos;
+  final List<Venda> vendas;
+  final void Function(Venda) aoRegistrar;
+  final void Function(Venda) aoAvancarStatus;
 
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      produto.nome,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Produto cadastrado',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+  @override
+  State<AbaVendas> createState() => _AbaVendasState();
+}
 
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 9,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(7),
-                ),
-                child: Text(
-                  formatarPreco(produto.preco),
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green.shade800,
-                  ),
-                ),
-              ),
+class _AbaVendasState extends State<AbaVendas> {
+  static const formasDePagamento = ['Pix', 'Dinheiro', 'Cartão'];
 
-              const SizedBox(width: 4),
+  int produtoEscolhido = 0;
+  int quantidade = 1;
+  String pagamento = 'Pix';
 
-              IconButton(
-                constraints: const BoxConstraints.tightFor(
-                  width: 34,
-                  height: 34,
-                ),
-                padding: EdgeInsets.zero,
-                onPressed: () => removerProduto(indice),
-                icon: const Icon(
-                  Icons.delete_outline,
-                  size: 19,
-                ),
-                color: corPrincipal,
-                tooltip: 'Excluir produto',
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  // Se o produto escolhido for removido do catálogo, volta para o primeiro
+  int get indiceProduto =>
+      produtoEscolhido < widget.produtos.length ? produtoEscolhido : 0;
 
-  // Lista de produtos cadastrados
-  Widget construirCatalogo() {
-    if (produtos.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.inventory_2_outlined,
-              size: 42,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Nenhum produto cadastrado',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 3),
-            const Text(
-              'Use o formulário acima para adicionar o primeiro produto.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.black54,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      );
+  double get totalVendido =>
+      widget.vendas.fold(0.0, (soma, venda) => soma + venda.total);
+
+  double get totalRecebido => widget.vendas
+      .where((venda) => venda.foiPaga)
+      .fold(0.0, (soma, venda) => soma + venda.total);
+
+  double get totalAReceber => totalVendido - totalRecebido;
+
+  void registrar() {
+    if (widget.produtos.isEmpty) {
+      mostrarAviso(context, 'Cadastre um produto antes de vender.');
+      return;
     }
 
-    return ListView.separated(
-      itemCount: produtos.length,
-      separatorBuilder: (context, indice) => const SizedBox(height: 6),
-      itemBuilder: (context, indice) {
-        return construirCardProduto(indice);
-      },
+    widget.aoRegistrar(
+      Venda(
+        produto: widget.produtos[indiceProduto],
+        quantidade: quantidade,
+        pagamento: pagamento,
+        horario: horaAtual(),
+      ),
+    );
+    setState(() => quantidade = 1);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final vendas = widget.vendas;
+    final quantidadeTexto = vendas.length == 1
+        ? '1 venda registrada'
+        : '${vendas.length} vendas registradas';
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        const Titulo(
+          'Controle de vendas do dia',
+          subtitulo: 'Registre as vendas e acompanhe o pagamento.',
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            CartaoResumo('Vendido', totalVendido, Colors.green.shade700),
+            CartaoResumo('Recebido', totalRecebido, Colors.green.shade700),
+            CartaoResumo('A receber', totalAReceber, vermelho),
+          ],
+        ),
+        const SizedBox(height: 8),
+        formulario(),
+        const SizedBox(height: 16),
+        Text(quantidadeTexto),
+        const SizedBox(height: 8),
+        for (final venda in vendas)
+          CartaoVenda(
+            venda: venda,
+            aoAvancar: () => widget.aoAvancarStatus(venda),
+          ),
+      ],
     );
   }
 
-  // Aba de gerenciamento de produtos
-  Widget construirAbaProdutos() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Gerenciamento de produtos',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: corPrincipal,
+  Widget formulario() {
+    final produtos = widget.produtos;
+
+    return Card(
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Nova venda',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-          ),
-
-          const SizedBox(height: 4),
-
-          const Text(
-            'Cadastre, organize e remova os produtos da cantina.',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.black54,
+            DropdownButton<int>(
+              isExpanded: true,
+              value: produtos.isEmpty ? null : indiceProduto,
+              hint: const Text('Nenhum produto no catálogo'),
+              items: [
+                for (int i = 0; i < produtos.length; i++)
+                  DropdownMenuItem(
+                    value: i,
+                    child: Text(
+                      '${produtos[i].nome} • ${emReais(produtos[i].preco)}',
+                    ),
+                  ),
+              ],
+              onChanged: (indice) =>
+                  setState(() => produtoEscolhido = indice ?? 0),
             ),
-          ),
-
-          const SizedBox(height: 16),
-
-          construirFormularioProduto(),
-
-          const SizedBox(height: 14),
-
-          Row(
-            children: [
-              const Icon(
-                Icons.inventory_2_outlined,
-                size: 18,
-              ),
-              const SizedBox(width: 7),
-
-              const Expanded(
-                child: Text(
-                  'Produtos cadastrados',
-                  style: TextStyle(
-                    fontSize: 15,
+            Row(
+              children: [
+                const Text('Qtd:'),
+                IconButton(
+                  icon: const Icon(Icons.remove_circle_outline),
+                  tooltip: 'Diminuir',
+                  onPressed: quantidade > 1
+                      ? () => setState(() => quantidade--)
+                      : null,
+                ),
+                Text(
+                  '$quantidade',
+                  style: const TextStyle(
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                IconButton(
+                  icon: const Icon(Icons.add_circle_outline),
+                  tooltip: 'Aumentar',
+                  onPressed: () => setState(() => quantidade++),
+                ),
+                const Spacer(),
+                DropdownButton<String>(
+                  value: pagamento,
+                  items: [
+                    for (final forma in formasDePagamento)
+                      DropdownMenuItem(value: forma, child: Text(forma)),
+                  ],
+                  onChanged: (forma) =>
+                      setState(() => pagamento = forma ?? 'Pix'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton.icon(
+              onPressed: registrar,
+              icon: const Icon(Icons.point_of_sale),
+              label: const Text('Registrar venda'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: vermelho,
+                foregroundColor: Colors.amber,
               ),
-
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 9,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '${produtos.length} ${produtos.length == 1 ? 'item' : 'itens'}',
-                  style: TextStyle(
-                    color: corPrincipal,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 8),
-
-          Expanded(
-            child: construirCatalogo(),
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
+}
 
-  // 10. COMPONENTES VISUAIS - RESUMO FINANCEIRO
+// ---------------------------------------------------------------------------
+// COMPONENTES REUTILIZADOS
+// ---------------------------------------------------------------------------
 
-  // Cartão de indicador financeiro
-  Widget construirCartaoResumo(
-    String titulo,
-    double valor,
-    Color cor,
-  ) {
+class Titulo extends StatelessWidget {
+  const Titulo(this.texto, {super.key, required this.subtitulo});
+
+  final String texto;
+  final String subtitulo;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          texto,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: vermelho,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(subtitulo, style: const TextStyle(color: Colors.black54)),
+      ],
+    );
+  }
+}
+
+class Etiqueta extends StatelessWidget {
+  const Etiqueta(this.texto, {super.key, required this.cor});
+
+  final String texto;
+  final Color cor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: cor.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        texto,
+        style: TextStyle(color: cor, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+}
+
+class CartaoProduto extends StatelessWidget {
+  const CartaoProduto({
+    super.key,
+    required this.produto,
+    required this.aoRemover,
+  });
+
+  final Produto produto;
+  final VoidCallback aoRemover;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Colors.white,
+      margin: const EdgeInsets.only(bottom: 6),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Colors.amber.shade100,
+          foregroundColor: vermelho,
+          child: const Icon(Icons.fastfood_outlined),
+        ),
+        title: Text(
+          produto.nome,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              emReais(produto.preco),
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: Colors.green.shade800,
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              color: vermelho,
+              tooltip: 'Excluir produto',
+              onPressed: aoRemover,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class CartaoResumo extends StatelessWidget {
+  const CartaoResumo(this.titulo, this.valor, this.cor, {super.key});
+
+  final String titulo;
+  final double valor;
+  final Color cor;
+
+  @override
+  Widget build(BuildContext context) {
     return Expanded(
       child: Card(
         color: Colors.white,
@@ -694,13 +648,10 @@ class _TelaCatalogoState extends State<TelaCatalogo> {
           padding: const EdgeInsets.all(12),
           child: Column(
             children: [
-              Text(
-                titulo,
-                style: const TextStyle(fontSize: 13),
-              ),
+              Text(titulo),
               const SizedBox(height: 4),
               Text(
-                formatarPreco(valor),
+                emReais(valor),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -713,178 +664,31 @@ class _TelaCatalogoState extends State<TelaCatalogo> {
       ),
     );
   }
+}
 
-  // Agrupa os indicadores financeiros
-  Widget construirResumoFinanceiro() {
-    return Row(
-      children: [
-        construirCartaoResumo(
-          'Vendido',
-          totalVendido,
-          Colors.green.shade700,
-        ),
-        construirCartaoResumo(
-          'Recebido',
-          totalRecebido,
-          Colors.green.shade700,
-        ),
-        construirCartaoResumo(
-          'A receber',
-          totalAReceber,
-          corPrincipal,
-        ),
-      ],
-    );
-  }
+class CartaoVenda extends StatelessWidget {
+  const CartaoVenda({super.key, required this.venda, required this.aoAvancar});
 
-  // 11. COMPONENTES VISUAIS - VENDAS
+  final Venda venda;
+  final VoidCallback aoAvancar;
 
-  // Formulário para registrar uma nova venda
-  Widget construirFormularioVenda() {
-    return Card(
-      color: Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Nova venda',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            DropdownButton<int>(
-              isExpanded: true,
-              value: produtos.isEmpty ? null : produtoSelecionado,
-              hint: const Text('Catálogo vazio'),
-              items: [
-                for (int i = 0; i < produtos.length; i++)
-                  DropdownMenuItem(
-                    value: i,
-                    child: Text(
-                      '${produtos[i].nome} • ${formatarPreco(produtos[i].preco)}',
-                    ),
-                  ),
-              ],
-              onChanged: produtos.isEmpty
-                  ? null
-                  : (valor) {
-                      if (valor == null) return;
-
-                      setState(() {
-                        produtoSelecionado = valor;
-                      });
-                    },
-            ),
-
-            const SizedBox(height: 8),
-
-            Row(
-              children: [
-                const Text('Qtd:'),
-
-                IconButton(
-                  onPressed: quantidade > 1
-                      ? () {
-                          setState(() {
-                            quantidade--;
-                          });
-                        }
-                      : null,
-                  icon: const Icon(Icons.remove_circle_outline),
-                  tooltip: 'Diminuir',
-                ),
-
-                Text(
-                  '$quantidade',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                IconButton(
-                  onPressed: () {
-                    setState(() {
-                      quantidade++;
-                    });
-                  },
-                  icon: const Icon(Icons.add_circle_outline),
-                  tooltip: 'Aumentar',
-                ),
-
-                const Spacer(),
-
-                DropdownButton<String>(
-                  value: formaPagamento,
-                  items: [
-                    for (final forma in formasPagamento)
-                      DropdownMenuItem(
-                        value: forma,
-                        child: Text(forma),
-                      ),
-                  ],
-                  onChanged: (valor) {
-                    if (valor == null) return;
-
-                    setState(() {
-                      formaPagamento = valor;
-                    });
-                  },
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 8),
-
-            ElevatedButton.icon(
-              onPressed: registrarVenda,
-              icon: const Icon(Icons.point_of_sale),
-              label: const Text('Registrar venda'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: corPrincipal,
-                foregroundColor: Colors.amber,
-              ),
-            ),
-          ],
-        ),
+  @override
+  Widget build(BuildContext context) {
+    // O botão muda conforme a etapa em que a venda está
+    final Widget acao = switch (venda.status) {
+      StatusVenda.aguardandoPagamento => TextButton(
+        onPressed: aoAvancar,
+        child: const Text('Confirmar pagamento'),
       ),
-    );
-  }
-
-  // Card individual de venda
-  Widget construirCardVenda(Venda venda) {
-    Widget acao;
-
-    switch (venda.status) {
-      case StatusVenda.aguardandoPagamento:
-        acao = TextButton(
-          onPressed: () => avancarStatus(venda),
-          child: const Text('Confirmar pagamento'),
-        );
-        break;
-
-      case StatusVenda.pago:
-        acao = TextButton(
-          onPressed: () => avancarStatus(venda),
-          child: const Text('Marcar entregue'),
-        );
-        break;
-
-      case StatusVenda.entregue:
-        acao = const Icon(
-          Icons.check_circle,
-          color: Colors.blueGrey,
-        );
-        break;
-    }
-
-    final Color corStatus = corDoStatus(venda.status);
+      StatusVenda.pago => TextButton(
+        onPressed: aoAvancar,
+        child: const Text('Marcar entregue'),
+      ),
+      StatusVenda.entregue => const Icon(
+        Icons.check_circle,
+        color: Colors.blueGrey,
+      ),
+    };
 
     return Card(
       color: Colors.white,
@@ -904,9 +708,8 @@ class _TelaCatalogoState extends State<TelaCatalogo> {
                     ),
                   ),
                 ),
-
                 Text(
-                  formatarPreco(venda.total),
+                  emReais(venda.total),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -915,127 +718,16 @@ class _TelaCatalogoState extends State<TelaCatalogo> {
                 ),
               ],
             ),
-
             const SizedBox(height: 4),
-
             Text('${venda.pagamento} • ${venda.horario}'),
-
             const SizedBox(height: 4),
-
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: corStatus.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    descricaoStatus(venda.status),
-                    style: TextStyle(
-                      color: corStatus,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-
+                Etiqueta(venda.status.texto, cor: venda.status.cor),
                 const Spacer(),
-
                 acao,
               ],
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Aba de gerenciamento de vendas
-  Widget construirAbaVendas() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text(
-          'Controle de vendas do dia',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: corPrincipal,
-          ),
-        ),
-
-        const SizedBox(height: 12),
-
-        construirResumoFinanceiro(),
-
-        const SizedBox(height: 8),
-
-        construirFormularioVenda(),
-
-        const SizedBox(height: 12),
-
-        Text('${vendas.length} vendas registradas'),
-
-        const SizedBox(height: 8),
-
-        for (final venda in vendas)
-          construirCardVenda(venda),
-      ],
-    );
-  }
-
-  // 12. CONSTRUÇÃO DA INTERFACE PRINCIPAL
-
-  @override
-  Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Row(
-            children: [
-              Icon(
-                Icons.admin_panel_settings_outlined,
-                size: 27,
-              ),
-              SizedBox(width: 10),
-              Text(
-                nomeAplicativo,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: corPrincipal,
-          foregroundColor: Colors.white,
-          elevation: 2,
-          bottom: const TabBar(
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            indicatorColor: Colors.amber,
-            indicatorWeight: 3,
-            tabs: [
-              Tab(
-                icon: Icon(Icons.inventory_2_outlined),
-                text: 'Produtos',
-              ),
-              Tab(
-                icon: Icon(Icons.point_of_sale),
-                text: 'Gestão de vendas',
-              ),
-            ],
-          ),
-        ),
-
-        body: TabBarView(
-          children: [
-            construirAbaProdutos(),
-            construirAbaVendas(),
           ],
         ),
       ),
