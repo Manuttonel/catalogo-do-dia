@@ -4,60 +4,57 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:catalogo_do_dia/main.dart';
 
 void main() {
-  testWidgets('Mostra o catálogo, adiciona e remove uma comida',
-      (tester) async {
+  testWidgets('Cadastra e remove produtos', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(900, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
     await tester.pumpWidget(const CatalogoApp());
 
-    expect(find.text('Catálogo do dia'), findsOneWidget);
+    expect(find.text('Administração Cantina'), findsOneWidget);
     expect(find.text('Pão de queijo'), findsOneWidget);
-    expect(find.text('R\$ 5,00'), findsWidgets);
-    expect(find.text('10 opções no catálogo'), findsOneWidget);
+    expect(find.text('10 itens'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField).at(0), 'Tapioca');
     await tester.enterText(find.byType(TextField).at(1), '7,50');
-    await tester.tap(find.text('Adicionar ao catálogo'));
+    await tester.tap(find.text('Cadastrar produto'));
     await tester.pump();
 
-    expect(find.text('11 opções no catálogo'), findsOneWidget);
+    expect(find.text('11 itens'), findsOneWidget);
+    expect(find.text('R\$ 7,50'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Remover').first);
+    await tester.tap(find.byTooltip('Excluir produto').first);
     await tester.pump();
 
     expect(find.text('Pão de queijo'), findsNothing);
-    expect(find.text('10 opções no catálogo'), findsOneWidget);
+    expect(find.text('10 itens'), findsOneWidget);
   });
 
   testWidgets('Registra uma venda e avança o fluxo de pagamento',
       (tester) async {
-    await tester.binding.setSurfaceSize(const Size(800, 2000));
+    await tester.binding.setSurfaceSize(const Size(900, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
     await tester.pumpWidget(const CatalogoApp());
-    await tester.tap(find.text('Vendas'));
+    await tester.tap(find.text('Gestão de vendas'));
     await tester.pumpAndSettle();
 
-    // Dados fictícios: 6 vendas, R$ 60,50 vendido, R$ 42,50 recebido
-    expect(find.text('6 vendas registradas'), findsOneWidget);
-    expect(find.text('R\$ 60,50'), findsOneWidget);
-    expect(find.text('R\$ 42,50'), findsOneWidget);
-    expect(find.text('R\$ 18,00'), findsWidgets);
+    expect(find.text('0 vendas registradas'), findsOneWidget);
 
-    // Nova venda: 2x Pão de queijo (primeira opção) = R$ 10,00
+    // Nova venda: 2x Pão de queijo (primeiro produto) = R$ 10,00
     await tester.tap(find.byTooltip('Aumentar'));
     await tester.pump();
     await tester.tap(find.text('Registrar venda'));
     await tester.pump();
 
-    expect(find.text('7 vendas registradas'), findsOneWidget);
-    expect(find.text('2x Pão de queijo'), findsNWidgets(2));
-    expect(find.text('R\$ 70,50'), findsOneWidget); // vendido
-    expect(find.text('R\$ 28,00'), findsOneWidget); // a receber
+    expect(find.text('1 vendas registradas'), findsOneWidget);
+    expect(find.text('Aguardando pagamento'), findsOneWidget);
 
-    // Confirma o pagamento da venda nova
-    await tester.tap(find.text('Confirmar pagamento').first);
+    await tester.tap(find.text('Confirmar pagamento'));
     await tester.pump();
+    expect(find.text('Pago'), findsOneWidget);
 
-    expect(find.text('R\$ 52,50'), findsOneWidget); // recebido
-    expect(find.text('R\$ 18,00'), findsWidgets); // a receber
+    await tester.tap(find.text('Marcar entregue'));
+    await tester.pump();
+    expect(find.text('Entregue'), findsOneWidget);
   });
 }
